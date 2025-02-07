@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { socketAtom } from "./state/socketAtom";
-import { useRecoilState } from "recoil";
+import { dataArray, socketAtom } from "./state/atom";
+import { useRecoilState, useRecoilValue } from "recoil";
+import WebSocketListener from "./components/WebSocketListener";
 
 const App = () => {
-  const [count, setCount] = useState(0);
-  const [inputField, setInputField] = useState("");
+  const [inputField, setInputField] = useState({ data: "" });
   const [socket, setSocket] = useRecoilState(socketAtom);
-  const [data, setData] = useState([]);
+  const data = useRecoilValue(dataArray);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://x.x.x.x:3000"); // instead of localhost we can use the ip address
+    const ws = new WebSocket("ws://192.168.231.158:3000"); // instead of localhost we can use the ip address
 
     ws.onopen = () => {
       console.log("Connected Successfully");
@@ -20,11 +20,11 @@ const App = () => {
       console.error(error);
     };
 
-    ws.onmessage = (mssg) => {
-      setData((prev) => [...prev, mssg.data]);
-      // console.log(mssg);
-      console.log(`send successfully`);
-    };
+    // ws.onmessage = (mssg) => {
+    //   setData((prev) => [...prev, mssg.data]);
+    //   // console.log(mssg);
+    //   console.log(`send successfully`);
+    // };
 
     ws.onclose = () => {
       console.log("connection interrupted !!!");
@@ -33,35 +33,36 @@ const App = () => {
 
   useEffect(() => {
     console.log("data", data);
-  }, [data, setData]);
+  }, [data]);
 
   return (
     <div>
+      <WebSocketListener />
       <div className="border ">
         <div className="font-mono text-2xl justify-self-center">Web-Chat</div>
       </div>
       <div>
         <input
           type="text"
-          value={inputField}
+          value={inputField.data}
           onChange={({ target: { value } }) => {
-            setInputField(value);
+            setInputField((prevData) => ({ ...prevData, data: value }));
           }}
           placeholder="enter text..."
         />
         <button
           onClick={() => {
-            socket.send(inputField);
+            socket.send(inputField.data);
           }}
         >
           send
         </button>
       </div>
-      <div>{inputField}</div>
+      <div>{inputField.data}</div>
       <div>
         {data &&
           data.map((mssg) => {
-            return <p key={count}>{mssg}</p>;
+            return <p key={mssg.timestamp}>{mssg.data}</p>;
           })}
       </div>
     </div>

@@ -5,4 +5,9 @@ const socketAtom = atom({
   default: null,
 });
 
-export { socketAtom };
+const dataArray = atom({
+  key: "dataArray",
+  default: [],
+});
+
+export { socketAtom, dataArray };
