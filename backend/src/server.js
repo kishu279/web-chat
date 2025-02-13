@@ -1,30 +1,28 @@
-const { WebSocketServer } = require("ws");
-const WebSocket = require("ws");
+require("dotenv").config();
+const express = require("express");
+const http = require("http");
+const mongoose = require("mongoose");
 
-const wss = new WebSocketServer({ port: 3000 });
+const userRoutes = require("./Routes/userRoutes");
 
-wss.on("connection", (ws) => {
-  console.log("connection established !!!");
+const app = express();
+const server = http.createServer(app);
+app.use(express.json());
 
-  ws.on("error", console.error);
-
-  ws.on("message", (data) => {
-    console.log(data.toString());
-    // data will be an object
-    // ZOD
-    // PRISMA
-    if (data.data !== null) {
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          // client.emit("DataFromAnotherUser", { data: data.data });
-
-          client.send(`${data}`);
-        }
-      });
-    }
+async function main() {
+  server.listen(3000, () => {
+    console.log("server is listening on port 3000");
   });
 
-  ws.on("close", () => {
-    console.log("Connection closed");
+  await mongoose.connect(process.env.DB_URL).then(() => {
+    console.log("db connected !!!");
   });
+}
+
+app.get("/", (req, res) => {
+  res.send("server is running perfectly");
 });
+
+app.use("/user", userRoutes);
+
+main();
