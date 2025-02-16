@@ -6,11 +6,11 @@ import { RecoilRoot } from "recoil";
 import { BrowserRouter } from "react-router";
 
 createRoot(document.getElementById("root")).render(
-  // <StrictMode>
-  <RecoilRoot>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </RecoilRoot>
-  // </StrictMode>
+  <StrictMode>
+    <RecoilRoot>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </RecoilRoot>
+  </StrictMode>
 );

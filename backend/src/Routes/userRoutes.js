@@ -4,22 +4,33 @@ const { userModel } = require("./../db/UserSchema.js");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { userSchema } = require("../schema/userData.js");
 
 // temporary storage
 // const user = {}; // user with the key value pairs
 // const validateTokens = new Map(); // tokens when created after the user signed ine
 
 router.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+  console.log(req.body);
+  const result = userSchema.safeParse(req.body);
 
-  if (!email || !password) {
-    // if any of the fields are not given properly
-
+  if (!result.success) {
     return res.status(400).json({
       success: false,
-      message: "required fields are neccessary",
+      message: result.error.format(),
     });
   }
+
+  const { email, password, userName } = result.data;
+
+  // if (!email || !password) {
+  //   // if any of the fields are not given properly
+
+  //   return res.status(400).json({
+  //     success: false,
+  //     message: "required fields are neccessary",
+  //   });
+  // }
 
   try {
     // check for the user that has already created with this email
@@ -35,6 +46,7 @@ router.post("/signup", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 8); // the password must be hashed
     // to push the data we have to use the create method
     await userModel.create({
+      userName: userName,
       email: email,
       password: hashedPassword,
     });
@@ -52,17 +64,27 @@ router.post("/signup", async (req, res) => {
 });
 
 router.post("/signin", async (req, res) => {
-  const { email, password } = req.body;
+  const result = userSchema.safeParse(req.body);
 
-  if (!email || !password) {
+  if (!result.success) {
     return res.status(400).json({
       success: false,
-      message: "required fields are neccessary",
+      message: result.error.format(),
     });
   }
 
+  const { email, password } = result.data;
+
+  // if (!email || !password) {
+  //   return res.status(400).json({
+  //     success: false,
+  //     message: "required fields are neccessary",
+  //   });
+  // }
+
   try {
     const user = await userModel.findOne({ email: email });
+    console.log(await user);
 
     if (!user) {
       return res.status(400).json({
@@ -86,6 +108,7 @@ router.post("/signin", async (req, res) => {
           success: true,
           message: "signed in",
           token: token,
+          userName: user.userName,
         });
       }
 

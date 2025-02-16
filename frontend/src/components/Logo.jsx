@@ -6,6 +6,7 @@ const Logo = () => {
   return (
     <div>
       <p
+      className="cursor-pointer"
         onClick={() => {
           navigation("/");
         }}

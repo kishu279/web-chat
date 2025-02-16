@@ -1,15 +1,35 @@
 import { useState } from "react";
 import axios from "axios";
+import { useRecoilState, useSetRecoilState } from "recoil";
+import { tokenAtom, userNameAtom } from "../state/atom";
+import { userSchema } from "../schema/userData";
 
 const SignIn = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [res, setRes] = useState(null);
   const [loading, setLoading] = useState(false);
+  const setToken = useSetRecoilState(tokenAtom);
+  const [userName, setUserName] = useRecoilState(userNameAtom);
+
+  if (loading) {
+    return <div>Loading ...</div>;
+  }
 
   async function handleSignIn() {
+    setRes("");
     if (!inputEmail || !inputPassword) {
       throw new Error("Required Fields are necessary !!!");
+    }
+
+    const result = userSchema.safeParse({
+      email: inputEmail,
+      password: inputPassword,
+      userName: null,
+    });
+
+    if (!result.success) {
+      throw new Error(result.error.format());
     }
 
     setLoading(true);
@@ -17,10 +37,7 @@ const SignIn = () => {
     try {
       const response = await axios.post(
         "http://localhost:3000/user/signin",
-        {
-          email: inputEmail,
-          password: inputPassword,
-        },
+        result.data, //this is an  object
         {
           headers: {
             "Content-Type": "application/json",
@@ -35,17 +52,18 @@ const SignIn = () => {
         return;
       }
 
+      console.log(response.data);
+
       setRes(response.data.message);
+      setToken(response.data.token);
+      setUserName(response.data.userName);
     } catch (err) {
       console.log(err.response.data.message || `An Unknown error occurred`);
+      setRes(err.response.data.message || `An Unknown error occurred`);
       throw new Error(err.response.data.message || `An Unknown error occurred`);
     } finally {
       setLoading(false);
     }
-  }
-
-  if (loading) {
-    return <div>Loading ...</div>;
   }
 
   return (
@@ -70,6 +88,8 @@ const SignIn = () => {
         <button
           onClick={() => {
             handleSignIn();
+            setInputEmail("");
+            setInputPassword("");
           }}
         >
           verify
@@ -81,6 +101,7 @@ const SignIn = () => {
 };
 
 const SignUp = () => {
+  const [userName, setUserName] = useState("");
   const [inputEmail, setInputEmail] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [res, setRes] = useState(null);
@@ -88,18 +109,26 @@ const SignUp = () => {
 
   // function handle signIn
   async function handleSignUp() {
-    if (!inputEmail || !inputPassword) {
+    setRes("");
+    if (!inputEmail || !inputPassword || !userName) {
       throw new Error("Required Fields are necessary !!!");
+    }
+
+    const result = userSchema.safeParse({
+      email: inputEmail,
+      password: inputPassword,
+      userName: userName,
+    });
+
+    if (!result.success) {
+      throw new Error(result.error.format());
     }
 
     setLoading(true);
     try {
       const response = await axios.post(
         "http://localhost:3000/user/signup",
-        {
-          email: inputEmail,
-          password: inputPassword,
-        },
+        result.data,
         {
           headers: {
             "Content-Type": "application/json",
@@ -134,6 +163,13 @@ const SignUp = () => {
     <div>
       <div>
         <input
+          type="text"
+          value={userName}
+          onChange={({ target: { value } }) => {
+            setUserName(value);
+          }}
+        />
+        <input
           type="email"
           value={inputEmail}
           placeholder="email ..."
@@ -152,6 +188,9 @@ const SignUp = () => {
         <button
           onClick={() => {
             handleSignUp();
+            setInputEmail("");
+            setInputPassword("");
+            setUserName("");
           }}
         >
           create
