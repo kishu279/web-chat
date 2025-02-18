@@ -1,16 +1,17 @@
 import { useState } from "react";
 import axios from "axios";
-import { useRecoilState, useSetRecoilState } from "recoil";
-import { tokenAtom, userNameAtom } from "../state/atom";
+// import { useRecoilState, useSetRecoilState } from "recoil";
+// import { userNameAtom } from "../state/atom";
 import { userSchema } from "../schema/userData";
+import { useNavigate } from "react-router";
 
 const SignIn = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [res, setRes] = useState(null);
   const [loading, setLoading] = useState(false);
-  const setToken = useSetRecoilState(tokenAtom);
-  const [userName, setUserName] = useRecoilState(userNameAtom);
+  // const [userName, setUserName] = useRecoilState(userNameAtom);
+  const navigation = useNavigate();
 
   if (loading) {
     return <div>Loading ...</div>;
@@ -55,8 +56,8 @@ const SignIn = () => {
       console.log(response.data);
 
       setRes(response.data.message);
-      setToken(response.data.token);
-      setUserName(response.data.userName);
+      localStorage.setItem("auth-token", response.data.token); // in localstorage
+      navigation("/chatpage");
     } catch (err) {
       console.log(err.response.data.message || `An Unknown error occurred`);
       setRes(err.response.data.message || `An Unknown error occurred`);
@@ -101,7 +102,7 @@ const SignIn = () => {
 };
 
 const SignUp = () => {
-  const [userName, setUserName] = useState("");
+  // const [userName, setUserName] = useState("");
   const [inputEmail, setInputEmail] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [res, setRes] = useState(null);
@@ -110,14 +111,15 @@ const SignUp = () => {
   // function handle signIn
   async function handleSignUp() {
     setRes("");
-    if (!inputEmail || !inputPassword || !userName) {
+    if (!inputEmail || !inputPassword) {
+      // || !userName
       throw new Error("Required Fields are necessary !!!");
     }
 
     const result = userSchema.safeParse({
       email: inputEmail,
       password: inputPassword,
-      userName: userName,
+      // userName: userName,
     });
 
     if (!result.success) {
@@ -162,13 +164,13 @@ const SignUp = () => {
   return (
     <div>
       <div>
-        <input
+        {/* <input
           type="text"
           value={userName}
           onChange={({ target: { value } }) => {
             setUserName(value);
           }}
-        />
+        /> */}
         <input
           type="email"
           value={inputEmail}
@@ -190,7 +192,7 @@ const SignUp = () => {
             handleSignUp();
             setInputEmail("");
             setInputPassword("");
-            setUserName("");
+            // setUserName("");
           }}
         >
           create
