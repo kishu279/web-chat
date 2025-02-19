@@ -11,24 +11,9 @@ const socketAtom = atom({
   default: null,
 });
 
-const chatAtom = atomFamily({
+const chatAtom = atom({
   key: "chatAtom",
-  default: selectorFamily({
-    key: "chatAtom/Default",
-    get: ({ get }) => {
-      const socket = get(socketAtom);
-
-      const data = [];
-
-      socket.onmessage = (event) => {
-        const result = mssgSchema.safeParse(JSON.parse(event));
-
-        if (result.success) {
-          data.add(result.data);
-        }
-      };
-    },
-  }),
+  default: [],
 });
 
 export { userNameAtom, socketAtom, chatAtom };

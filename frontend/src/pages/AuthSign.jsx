@@ -37,7 +37,7 @@ const SignIn = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/user/signin",
+        "http://192.168.214.158:3000/user/signin",
         result.data, //this is an  object
         {
           headers: {
@@ -129,7 +129,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:3000/user/signup",
+        "http://192.168.214.158:3000/user/signup",
         result.data,
         {
           headers: {
@@ -164,13 +164,6 @@ const SignUp = () => {
   return (
     <div>
       <div>
-        {/* <input
-          type="text"
-          value={userName}
-          onChange={({ target: { value } }) => {
-            setUserName(value);
-          }}
-        /> */}
         <input
           type="email"
           value={inputEmail}

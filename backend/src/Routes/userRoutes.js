@@ -21,7 +21,7 @@ router.post("/signup", async (req, res) => {
     });
   }
 
-  const { email, password, userName } = result.data;
+  const { email, password } = result.data; // userName is removed for now
 
   // if (!email || !password) {
   //   // if any of the fields are not given properly
@@ -46,7 +46,7 @@ router.post("/signup", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 8); // the password must be hashed
     // to push the data we have to use the create method
     await userModel.create({
-      userName: userName,
+      // userName: userName,
       email: email,
       password: hashedPassword,
     });
@@ -84,7 +84,7 @@ router.post("/signin", async (req, res) => {
 
   try {
     const user = await userModel.findOne({ email: email });
-    console.log(await user);
+    // console.log(await user);
 
     if (!user) {
       return res.status(400).json({
@@ -104,11 +104,12 @@ router.post("/signin", async (req, res) => {
             expiresIn: "2h",
           }
         );
+
         return res.status(200).json({
           success: true,
           message: "signed in",
           token: token,
-          userName: user.userName,
+          // userName: user.userName,
         });
       }
 

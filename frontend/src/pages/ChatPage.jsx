@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Logo from "../components/Logo";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import { socketAtom, userNameAtom } from "../state/atom";
+import { chatAtom, socketAtom, userNameAtom } from "../state/atom";
 import { mssgSchema } from "../schema/userData";
 import { useNavigate } from "react-router";
 
@@ -17,6 +17,8 @@ const ChatPage = () => {
   const [userName, setUserName] = useRecoilState(userNameAtom);
   const [showGrpNdName, setShowGrpNdName] = useState(true);
 
+  const [mssgFromServer, setMssgFromServer] = useRecoilState(chatAtom);
+
   function handleGroupNdName() {
     if (token == null) {
       setTimeout(() => {
@@ -27,12 +29,26 @@ const ChatPage = () => {
     }
 
     try {
-      const ws = new WebSocket(`http://localhost:3000`); // we have to send the group name opn making conection
+      const ws = new WebSocket(`http://192.168.214.158:3000`); // we have to send the group name opn making conection
 
       ws.onopen = () => {
         setSocket(ws); // Atom we have stored the socket object
         setShowGrpNdName(false); // when group and user name are setted
         console.log("Connected to the chat server !!");
+      };
+
+      ws.onmessage = (event) => {
+        // event.data after the validation is completed by the mssgSchema
+        // console.log(event.data);
+        const result = mssgSchema.safeParse(JSON.parse(event.data));
+
+        if (result.success) {
+          setMssgFromServer((prev) => [...prev, result.data]); // it is just appending the result data
+
+          // console.log(result.data);
+        } else {
+          console.log(result.error);
+        }
       };
 
       ws.onerror = (error) => {
@@ -45,6 +61,17 @@ const ChatPage = () => {
     } catch (err) {
       throw new Error(err);
     }
+  }
+
+  // useEffect(() => {
+  //   console.log(mssgFromServer);
+  // }, [mssgFromServer]);
+
+  //function to format date and time
+  function formatDate(isoDateString) {
+    const date = new Date(isoDateString); // it makes an object and then converts to the local date and time
+
+    return date.toLocaleString();
   }
 
   return (
@@ -96,8 +123,54 @@ const ChatPage = () => {
           <div>
             <div className="border">
               <div className="mt-10 place-items-center">
-                <div className="p-5 border h-[750px] w-[1300px] overflow-x-scroll font-mono font-medium text-xl">
-                  text
+                <div className="p-5 border h-[750px] w-[1300px] overflow-y-scroll font-mono font-medium text-xl display flex flex-col gap-2">
+                  {/* {mssgFromServer &&
+                    mssgFromServer.map((mssg) => (
+                      <div
+                        className={`border p-2 ${
+                          mssg.user.userName === userName
+                            ? "bg-gray-200 place-items-end"
+                            : ""
+                        }`}
+                        key={mssg.timestamp}
+                      >
+                        <p>{mssg.data + " - " + mssg.user.userName}</p>
+                      </div>
+                    ))} */}
+
+                  {mssgFromServer &&
+                    mssgFromServer.map((mssg) => {
+                      if (mssg.user.userName === userName) {
+                        return (
+                          <div
+                            className="p-2 place-items-end relative "
+                            key={mssg.timestamp}
+                          >
+                            <div className="mb-6">
+                              <div className="place-items-end w-[900px] rounded-2xl p-2 bg-gray-200 relative z-0 ">
+                                <p className="">{mssg.data}</p>
+                              </div>
+                              <p className="border rounded-full p-2 text-sm absolute z-1 right-2 top-11">
+                                {formatDate(mssg.timestamp)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="p-2 relative " key={mssg.timestamp}>
+                            <div className="mb-6">
+                              <div className="w-[900px] rounded-2xl p-2 bg-gray-200 relative z-0">
+                                <p className="">{mssg.data}</p>
+                              </div>
+                              <p className="border rounded-full p-2 text-sm absolute z-1 top-11">
+                                {formatDate(mssg.timestamp)}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                    })}
                 </div>
               </div>
               <div className="gap-8 flex justify-self-center mt-4">
@@ -132,7 +205,7 @@ const ChatPage = () => {
                       }
 
                       socket.send(JSON.stringify(result.data)); // object
-                      console.log(result.data);
+                      // console.log(result.data);
                     }
                   }}
                 >
