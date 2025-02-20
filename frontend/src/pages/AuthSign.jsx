@@ -37,7 +37,7 @@ const SignIn = () => {
 
     try {
       const response = await axios.post(
-        "http://192.168.214.158:3000/user/signin",
+        "http://localhost:3000/user/signin",
         result.data, //this is an  object
         {
           headers: {
@@ -129,7 +129,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.214.158:3000/user/signup",
+        "http://localhost:3000/user/signup",
         result.data,
         {
           headers: {

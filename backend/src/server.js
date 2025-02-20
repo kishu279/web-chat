@@ -3,6 +3,7 @@ const express = require("express");
 const http = require("http");
 const mongoose = require("mongoose");
 const { WebSocketServer } = require("ws");
+const url = require("url");
 
 const userRoutes = require("./Routes/userRoutes");
 const { mssgSchema } = require("./schema/userData");
@@ -12,9 +13,13 @@ const server = http.createServer(app);
 app.use(express.json());
 const wss1 = new WebSocketServer({ noServer: true });
 
+// Grp Name and Token will be map
+const userToken = new Map();
+const grpUsers = new Map(); // the users will be in the array format
+
 // CORS APPLIED
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://192.168.214.158:5173");
+  res.header("Access-Control-Allow-Origin", "http://localhost:5173");
   res.header(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept"
@@ -46,12 +51,55 @@ app.get("/", (req, res) => {
 app.use("/user", userRoutes);
 
 wss1.on("connection", (ws) => {
-  console.log("Connected !!!");
+  console.log("Connected to server !!!");
+
+  // OnError event is also do the same as close
   ws.on("error", (error) => {
+    // first remove from the grp
+    const user = userToken[ws]; // [token, grpName]
+
+    const grpName = user[1];
+    if (grpUsers.has(grpName)) {
+      const grpArray = grpUsers.get(grpName);
+
+      const index = grpArray.indexOf(ws);
+      if (index > -1) {
+        grpArray.splice(index, 1);
+      }
+
+      if (grpArray.length === 0) {
+        // if no users are there then remove the grp
+        grpUsers.delete(grpName);
+      } else {
+        // if the users are there then update the Arrray
+        grpUsers.set(grpName, grpArray);
+      }
+    }
     console.log(error);
   });
 
   ws.on("close", () => {
+    // first remove from the grp
+    const user = userToken[ws]; // [token, grpName]
+
+    const grpName = user[1];
+    if (grpUsers.has(grpName)) {
+      const grpArray = grpUsers.get(grpName);
+
+      const index = grpArray.indexOf(ws);
+      if (index > -1) {
+        grpArray.splice(index, 1);
+      }
+
+      if (grpArray.length === 0) {
+        // if no users are there then remove the grp
+        grpUsers.delete(grpName);
+      } else {
+        // if the users are there then update the Arrray
+        grpUsers.set(grpName, grpArray);
+      }
+    }
+
     console.log("Connecion is closed");
   });
 
@@ -60,18 +108,61 @@ wss1.on("connection", (ws) => {
 
     // console.log("Recieved data: ", JSON.parse(event)); // message and groups will be handled
     // console.log(result.data);
-    wss1.clients.forEach(function (client) {
-      // all the connected clients traversed
-      client.send(JSON.stringify(result.data));
-    });
+
+    // destructure the token and grp name
+
+    if (result.success) {
+      // console.log(typeof result.data);
+      const { group } = result.data;
+      // console.log(group);
+
+      // But for the users in specific group
+      const grpArray = grpUsers.get(group);
+
+      grpArray.forEach((client) => {
+        client.send(JSON.stringify(result.data));
+      });
+    } else {
+      console.log(result.error.format());
+    }
+
+    // for Broadcasting to all the users
+    // wss1.clients.forEach(function (client) {
+    //   // all the connected clients traversed
+    //   client.send(JSON.stringify(result.data));
+    // });
   });
 });
 
 server.on("upgrade", (req, socket, head) => {
-  const pathname = new URL(req.url, "wss://localhost:3000/");
+  // console.log(req.url);
 
-  // if(pathname === '')
+  // const { pathname } = new URL(req.url, "ws://localhost:3000/"); // If link would be ws://localhost:3000/path
+  // const grpName = pathname;
+
+  const queryParams = new URLSearchParams(url.parse(req.url).query); // url :- ws://localhost:3000/?token=...&grpName=...
+  const grpName = queryParams.get("grpName");
+  const token = queryParams.get("token");
+
   wss1.handleUpgrade(req, socket, head, (ws) => {
+    // console.log("UnderHandleUpgrade");
+    // check for the existing grp ot the user is connected
+    if (!userToken.has(ws)) {
+      // if no users are there then ws object are mapped with the token
+      console.log("User Connected");
+      userToken.set(ws, [token, grpName]);
+    }
+
+    if (!grpUsers.has(grpName)) {
+      // if no grp created then new array will be created
+      console.log("New Grp Created");
+      grpUsers.set(grpName, [ws]);
+    } else {
+      // grpUsers[grpName] = (prev) => [...prev, ws];  // wrong way of implementation
+      console.log("Appending with the prev grp");
+      grpUsers.set(grpName, [...grpUsers.get(grpName), ws]); // Good way of implementation
+    }
+
     wss1.emit("connection", ws, req);
   });
 });

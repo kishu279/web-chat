@@ -29,7 +29,9 @@ const ChatPage = () => {
     }
 
     try {
-      const ws = new WebSocket(`http://192.168.214.158:3000`); // we have to send the group name opn making conection
+      const ws = new WebSocket(
+        `ws://localhost:3000/?grpName=${grpName}&token=${token}`
+      ); // we have to send the group name opn making conection
 
       ws.onopen = () => {
         setSocket(ws); // Atom we have stored the socket object
