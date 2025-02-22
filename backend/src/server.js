@@ -4,9 +4,11 @@ const http = require("http");
 const mongoose = require("mongoose");
 const { WebSocketServer } = require("ws");
 const url = require("url");
+const jwt = require("jsonwebtoken");
 
 const userRoutes = require("./Routes/userRoutes");
 const { mssgSchema } = require("./schema/userData");
+const { error } = require("console");
 
 const app = express();
 const server = http.createServer(app);
@@ -134,7 +136,21 @@ wss1.on("connection", (ws) => {
   });
 });
 
-server.on("upgrade", (req, socket, head) => {
+async function authentication(token) {
+  return await jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+    if (err) {
+      console.log("JWT verification error: ", err);
+      return false;
+    }
+
+    if (decoded) {
+      console.log("JWT decoded: ", decoded);
+      return true;
+    }
+  });
+}
+
+server.on("upgrade", async (req, socket, head) => {
   // console.log(req.url);
 
   // const { pathname } = new URL(req.url, "ws://localhost:3000/"); // If link would be ws://localhost:3000/path
@@ -144,27 +160,80 @@ server.on("upgrade", (req, socket, head) => {
   const grpName = queryParams.get("grpName");
   const token = queryParams.get("token");
 
-  wss1.handleUpgrade(req, socket, head, (ws) => {
-    // console.log("UnderHandleUpgrade");
-    // check for the existing grp ot the user is connected
-    if (!userToken.has(ws)) {
-      // if no users are there then ws object are mapped with the token
-      console.log("User Connected");
-      userToken.set(ws, [token, grpName]);
+  // passing the token to the function which will check auth
+  const authenticated = await authentication(token);
+
+  try {
+    if (!authenticated) {
+      socket.write("HTTP/1.1 401 Unauthorized\r\n");
+      socket.write("Content-Type: text/plain\r\n");
+      socket.write("Connection: close\r\n");
+      socket.write("\r\n");
+      socket.write("Authentication failed please try sign in again\r\n");
+
+      socket.destroy(); // socket is destroyed if it causes an error
+      console.error("Authentication is failed");
+      return;
     }
 
-    if (!grpUsers.has(grpName)) {
-      // if no grp created then new array will be created
-      console.log("New Grp Created");
-      grpUsers.set(grpName, [ws]);
-    } else {
-      // grpUsers[grpName] = (prev) => [...prev, ws];  // wrong way of implementation
-      console.log("Appending with the prev grp");
-      grpUsers.set(grpName, [...grpUsers.get(grpName), ws]); // Good way of implementation
-    }
+    wss1.handleUpgrade(req, socket, head, (ws) => {
+      // console.log("UnderHandleUpgrade");
+      // check for the existing grp ot the user is connected
+      if (!userToken.has(ws)) {
+        // if no users are there then ws object are mapped with the token
+        console.log("User Connected");
+        userToken.set(ws, [token, grpName]);
+      }
 
-    wss1.emit("connection", ws, req);
-  });
+      if (!grpUsers.has(grpName)) {
+        // if no grp created then new array will be created
+        console.log("New Grp Created");
+        grpUsers.set(grpName, [ws]);
+      } else {
+        // grpUsers[grpName] = (prev) => [...prev, ws];  // wrong way of implementation
+        console.log("Appending with the prev grp");
+        grpUsers.set(grpName, [...grpUsers.get(grpName), ws]); // Good way of implementation
+      }
+
+      wss1.emit("connection", ws, req);
+    });
+  } catch (err) {
+    socket.destroy();
+    console.error("err: ", err);
+  }
 });
+
+// server.on("upgrade", (req, socket, head) => {
+//   // console.log(req.url);
+
+//   // const { pathname } = new URL(req.url, "ws://localhost:3000/"); // If link would be ws://localhost:3000/path
+//   // const grpName = pathname;
+
+//   const queryParams = new URLSearchParams(url.parse(req.url).query); // url :- ws://localhost:3000/?token=...&grpName=...
+//   const grpName = queryParams.get("grpName");
+//   const token = queryParams.get("token");
+
+//   wss1.handleUpgrade(req, socket, head, (ws) => {
+//     // console.log("UnderHandleUpgrade");
+//     // check for the existing grp ot the user is connected
+//     if (!userToken.has(ws)) {
+//       // if no users are there then ws object are mapped with the token
+//       console.log("User Connected");
+//       userToken.set(ws, [token, grpName]);
+//     }
+
+//     if (!grpUsers.has(grpName)) {
+//       // if no grp created then new array will be created
+//       console.log("New Grp Created");
+//       grpUsers.set(grpName, [ws]);
+//     } else {
+//       // grpUsers[grpName] = (prev) => [...prev, ws];  // wrong way of implementation
+//       console.log("Appending with the prev grp");
+//       grpUsers.set(grpName, [...grpUsers.get(grpName), ws]); // Good way of implementation
+//     }
+
+//     wss1.emit("connection", ws, req);
+//   });
+// });
 
 main();

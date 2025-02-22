@@ -22,6 +22,7 @@ router.post("/signup", async (req, res) => {
   }
 
   const { email, password } = result.data; // userName is removed for now
+  console.log(email, password)
 
   // if (!email || !password) {
   //   // if any of the fields are not given properly

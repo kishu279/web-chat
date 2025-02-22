@@ -54,11 +54,12 @@ const ChatPage = () => {
       };
 
       ws.onerror = (error) => {
-        console.error(error);
+        console.error("error: ", error); // we are getting the error inside this
       };
 
       ws.onclose = (event) => {
-        console.log("Connection is closed", event);
+        navigation("/");
+        console.log("Connection is closed");
       };
     } catch (err) {
       throw new Error(err);
