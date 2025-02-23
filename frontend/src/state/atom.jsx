@@ -16,4 +16,9 @@ const chatAtom = atom({
   default: [],
 });
 
-export { userNameAtom, socketAtom, chatAtom };
+const userAtom = atom({
+  key: "userAtom",
+  default: {},
+});
+
+export { userAtom, socketAtom, chatAtom };

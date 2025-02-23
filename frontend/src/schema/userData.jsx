@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 const userSchema = z.object({
+  userName: z.string().nullable(),
   email: z.string().email(),
   password: z.string(),
-  // userName: z.string().nullable(),
 });
 
 const mssgSchema = z.object({

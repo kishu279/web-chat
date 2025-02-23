@@ -21,8 +21,8 @@ router.post("/signup", async (req, res) => {
     });
   }
 
-  const { email, password } = result.data; // userName is removed for now
-  console.log(email, password)
+  const { email, password, userName } = result.data; // userName is removed for now
+  console.log(email, password);
 
   // if (!email || !password) {
   //   // if any of the fields are not given properly
@@ -48,6 +48,7 @@ router.post("/signup", async (req, res) => {
     // to push the data we have to use the create method
     await userModel.create({
       // userName: userName,
+      user: userName,
       email: email,
       password: hashedPassword,
     });
@@ -85,7 +86,7 @@ router.post("/signin", async (req, res) => {
 
   try {
     const user = await userModel.findOne({ email: email });
-    // console.log(await user);
+    console.log(await user);
 
     if (!user) {
       return res.status(400).json({
@@ -102,7 +103,7 @@ router.post("/signin", async (req, res) => {
           { email: email },
           process.env.JWT_SECRET_KEY,
           {
-            expiresIn: "2h",
+            expiresIn: "1h",
           }
         );
 
@@ -110,7 +111,10 @@ router.post("/signin", async (req, res) => {
           success: true,
           message: "signed in",
           token: token,
-          // userName: user.userName,
+          user: {
+            name: user.user,
+            email: user.email,
+          },
         });
       }
 

@@ -50,8 +50,12 @@ app.get("/", (req, res) => {
   res.send("server is running perfectly");
 });
 
+// Http request
 app.use("/user", userRoutes);
 
+
+
+// Web Socket request
 wss1.on("connection", (ws) => {
   console.log("Connected to server !!!");
 
@@ -84,25 +88,28 @@ wss1.on("connection", (ws) => {
     // first remove from the grp
     const user = userToken[ws]; // [token, grpName]
 
-    const grpName = user[1];
-    if (grpUsers.has(grpName)) {
-      const grpArray = grpUsers.get(grpName);
+    try {
+      if (grpUsers.has(user[1])) {
+        const grpArray = grpUsers.get(grpName);
 
-      const index = grpArray.indexOf(ws);
-      if (index > -1) {
-        grpArray.splice(index, 1);
+        const index = grpArray.indexOf(ws);
+        if (index > -1) {
+          grpArray.splice(index, 1);
+        }
+
+        if (grpArray.length === 0) {
+          // if no users are there then remove the grp
+          grpUsers.delete(grpName);
+        } else {
+          // if the users are there then update the Arrray
+          grpUsers.set(grpName, grpArray);
+        }
       }
 
-      if (grpArray.length === 0) {
-        // if no users are there then remove the grp
-        grpUsers.delete(grpName);
-      } else {
-        // if the users are there then update the Arrray
-        grpUsers.set(grpName, grpArray);
-      }
+      console.log("Connecion is closed");
+    } catch (err) {
+      console.log(err);
     }
-
-    console.log("Connecion is closed");
   });
 
   ws.on("message", (event) => {
@@ -135,20 +142,6 @@ wss1.on("connection", (ws) => {
     // });
   });
 });
-
-async function authentication(token) {
-  return await jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
-    if (err) {
-      console.log("JWT verification error: ", err);
-      return false;
-    }
-
-    if (decoded) {
-      console.log("JWT decoded: ", decoded);
-      return true;
-    }
-  });
-}
 
 server.on("upgrade", async (req, socket, head) => {
   // console.log(req.url);
@@ -235,5 +228,19 @@ server.on("upgrade", async (req, socket, head) => {
 //     wss1.emit("connection", ws, req);
 //   });
 // });
+
+async function authentication(token) {
+  return await jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+    if (err) {
+      console.log("JWT verification error: ", err);
+      return false;
+    }
+
+    if (decoded) {
+      console.log("JWT decoded: ", decoded);
+      return true;
+    }
+  });
+}
 
 main();

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Logo from "../components/Logo";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import { chatAtom, socketAtom, userNameAtom } from "../state/atom";
+import { chatAtom, socketAtom } from "../state/atom";
 import { mssgSchema } from "../schema/userData";
 import { useNavigate } from "react-router";
 
@@ -14,7 +14,7 @@ const ChatPage = () => {
 
   // Group name
   const [grpName, setGrpName] = useState("");
-  const [userName, setUserName] = useRecoilState(userNameAtom);
+  const [userName, setUserName] = useState("");
   const [showGrpNdName, setShowGrpNdName] = useState(true);
 
   const [mssgFromServer, setMssgFromServer] = useRecoilState(chatAtom);

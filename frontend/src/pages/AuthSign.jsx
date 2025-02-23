@@ -4,13 +4,15 @@ import axios from "axios";
 // import { userNameAtom } from "../state/atom";
 import { userSchema } from "../schema/userData";
 import { useNavigate } from "react-router";
+import { useRecoilState } from "recoil";
+import { userAtom } from "../state/atom";
 
 const SignIn = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [res, setRes] = useState(null);
   const [loading, setLoading] = useState(false);
-  // const [userName, setUserName] = useRecoilState(userNameAtom);
+  const [user, setUser] = useRecoilState(userAtom);
   const navigation = useNavigate();
 
   if (loading) {
@@ -24,9 +26,9 @@ const SignIn = () => {
     }
 
     const result = userSchema.safeParse({
+      userName: null,
       email: inputEmail,
       password: inputPassword,
-      userName: null,
     });
 
     if (!result.success) {
@@ -57,6 +59,7 @@ const SignIn = () => {
 
       setRes(response.data.message);
       localStorage.setItem("auth-token", response.data.token); // in localstorage
+      setUser(response.data.user);
       navigation("/chatpage");
     } catch (err) {
       console.log(err.response.data.message || `An Unknown error occurred`);
@@ -102,7 +105,7 @@ const SignIn = () => {
 };
 
 const SignUp = () => {
-  // const [userName, setUserName] = useState("");
+  const [userName, setUserName] = useState("");
   const [inputEmail, setInputEmail] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [res, setRes] = useState(null);
@@ -117,9 +120,9 @@ const SignUp = () => {
     }
 
     const result = userSchema.safeParse({
+      userName: userName,
       email: inputEmail,
       password: inputPassword,
-      // userName: userName,
     });
 
     if (!result.success) {
@@ -165,6 +168,14 @@ const SignUp = () => {
     <div>
       <div>
         <input
+          type="text"
+          value={userName}
+          placeholder="your name..."
+          onChange={({ target: { value } }) => {
+            setUserName(value);
+          }}
+        />
+        <input
           type="email"
           value={inputEmail}
           placeholder="email ..."
@@ -185,7 +196,7 @@ const SignUp = () => {
             handleSignUp();
             setInputEmail("");
             setInputPassword("");
-            // setUserName("");
+            setUserName("");
           }}
         >
           create
